@@ -13,23 +13,14 @@ import time
 class Link:
     def __init__(self,capacity,delay):
         # the amount of this link's capacity that is currently being used
-        used = 0
+        self.used = 0
         # the capacity of this link
-        cap = capacity
+        self.cap = capacity
         # the propogation delay of this link
-        prop = delay
-
-# A node in the simulated network. Contains a list of connected nodes, and a list of Links, with
-# those links corresponding to the adjacent nodes with the same list index
-class Node:
-    def __init__(self):
-        # Indexes of nodes adjacent to this one
-        adj = []
-        # Links to those nodes. Indexes in this list should correspond to above list, as lists preserve insert order
-        links = []
+        self.prop = delay
 
 # A container for the information regarding a connection that we need to simulate
-class Connect:
+class Connection:
     def __init__(self, startTime, duration, fromNode, toNode):
         # When this connection should start
         self.time = startTime
@@ -91,8 +82,15 @@ workList = []
 #
 
 #for line in top:
-    #print line
     #each line: [node 1] [node 2] [prop delay] [capacity]
+
+    #parts = line.split()
+    #n1 = parts[0]
+    #n2 = parts[1]
+    #delay = parts[2]
+    #capacity = parts[3]
+
+    #if
 
     #for each line check if the nodes exist.
         #if not, then create them
