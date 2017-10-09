@@ -23,13 +23,15 @@ with open(sys.argv[3]) as topFile:
 #stripping out the newline characters
 top = [x.strip() for x in top]
 
-for line in top:
+#for line in top:
+    #print line
     #each line: [node 1] [node 2] [prop delay] [capacity]
 
     #for each line check if the nodes exist.
         #if not, then create them
         #check if there's already a link between those two nodes
             #if not, add it
+    
 
 #reading in the workload text file
 with open(sys.argv[4]) as workFile:
@@ -37,5 +39,6 @@ with open(sys.argv[4]) as workFile:
 #stripping out the newline characters
 work = [x.strip() for x in work]
 
-for line in work:
+#for line in work:
+    #print line
     #maybe store as list of some connection class?
