@@ -5,6 +5,43 @@ import time
 
 #
 #
+# DEFINING SOME CLASSES
+#
+#
+
+# A container for the information regarding a link between two nodes
+class Link:
+    def __init__(self,capacity,delay):
+        # the amount of this link's capacity that is currently being used
+        used = 0
+        # the capacity of this link
+        cap = capacity
+        # the propogation delay of this link
+        prop = delay
+
+# A node in the simulated network. Contains a list of connected nodes, and a list of Links, with
+# those links corresponding to the adjacent nodes with the same list index
+class Node:
+    def __init__(self):
+        # Indexes of nodes adjacent to this one
+        adj = []
+        # Links to those nodes. Indexes in this list should correspond to above list, as lists preserve insert order
+        links = []
+
+# A container for the information regarding a connection that we need to simulate
+class Connect:
+    def __init__(self, startTime, duration, fromNode, toNode):
+        # When this connection should start
+        self.time = startTime
+        # How long the connection should last for
+        self.length = duration
+        # the index of the node this connection sends from
+        self.fnode = fromNode
+        # the index of the node this connection is sending information to
+        self.tnode = toNode
+
+#
+#
 # READING IN ARGUMENTS AND INITIALISING VARIABLES
 #
 #
@@ -76,6 +113,7 @@ workList = []
 #
 #
 
+# The time at which the simulation started
 start = time.time()
 
 # The list of currently simulated connections
