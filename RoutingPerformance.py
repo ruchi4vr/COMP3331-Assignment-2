@@ -15,17 +15,17 @@ class Link:
         # the amount of this link's capacity that is currently being used
         self.used = 0
         # the capacity of this link
-        self.cap = capacity
+        self.cap = int(capacity)
         # the propogation delay of this link
-        self.prop = delay
+        self.prop = float(delay)
 
 # A container for the information regarding a connection that we need to simulate
 class Connection:
     def __init__(self, startTime, duration, fromNode, toNode):
         # When this connection should start
-        self.time = startTime
+        self.time = float(startTime)
         # How long the connection should last for
-        self.length = duration
+        self.length = float(duration)
         # the index of the node this connection sends from
         self.fnode = fromNode
         # the index of the node this connection is sending information to
@@ -63,17 +63,9 @@ with open(sys.argv[4]) as workFile:
 work = [x.strip() for x in work]
 
 
-
-# List of letters that are in the node graph ("A", "B", etc)
-# Used to quickly check if a node already exists in the graph when initialising it, and to quickly work
-# out the index of the require node in the list of nodes
-nameList = []
-
-# List of nodes in the graph
-nodeList = []
-
-# List of connections that need to be made
-workList = []
+# List of nodes in the graph. Key is the node's letter (e.g "A", "B").
+# Value is a dictionary for the node's adjacency list
+nodeDict = {}
 
 #
 #
@@ -81,26 +73,73 @@ workList = []
 #
 #
 
-#for line in top:
-    #each line: [node 1] [node 2] [prop delay] [capacity]
+for line in top:
+    # each line: [node 1] [node 2] [prop delay] [capacity]
 
-    #parts = line.split()
-    #n1 = parts[0]
-    #n2 = parts[1]
-    #delay = parts[2]
-    #capacity = parts[3]
+    parts = line.split()
+    n1 = parts[0]
+    n2 = parts[1]
+    delay = parts[2]
+    capacity = parts[3]
+    
+    # Add nodes to graph if they aren't alredy
+    if n1 not in nodeDict:
+        nodeDict[n1] = {}
+    if n2 not in nodeDict:
+        nodeDict[n2] = {}
+    
+    # Create instance of link class
+    link = Link(capacity,delay)
+    
+    # if there's no link between the nodes, add the link
+    if n2 not in nodeDict[n1]:
+        nodeDict[n1][n2] = link
+    if n1 not in nodeDict[n2]:
+        nodeDict[n2][n1] = link
 
-    #if
 
-    #for each line check if the nodes exist.
-        #if not, then create them
-        #check if there's already a link between those two nodes
-            #if not, add it
+# List of connections that need to be made
+workList = []
 
 
-#for line in work:
-    #print line
-    #maybe store as list of some connection class?
+for line in work:
+    # each line: [start time] [from node] [to node] [duration]
+    
+    parts = line.split()
+    begins = parts[0]
+    n1 = parts[1]
+    n2 = parts[2]
+    duration = parts[3]
+    
+    # make sure the origin and destination nodes are in graph
+    if n1 not in nodeDict:
+        nodeDict[n1] = {}
+    if n2 not in nodeDict:
+        nodeDict[n2] = {}
+    
+    # making an instance of the connection class
+    connection = Connection(begins, duration, n1, n2)
+    
+    # add connection to list of connections we need to simulate
+    workList.append(connection)
+
+
+#
+# TEST PRINT LOOP TO CHECK NODE GRAPH INITIALISED CORRECTLY. SPOILER: IT DID.
+#
+
+#for item in nodeDict:
+    #print item
+    #for i2 in nodeDict[item]:
+        #print "link: "+i2
+
+#
+# SAME THING FOR WORK LIST
+#
+#for item in workList:
+    #print item.fnode
+
+
 
 
 
@@ -123,5 +162,11 @@ connList = []
 # If we do that, eventually that list will empty.
 # Once both lists are empty, there's nothing left to do and we can print the results
 
-# while len(workList)>0 and len(connList>0):
-    #DO STUFF
+print "starting at: %f" %start
+print "need to make %d connections" %len(workList)
+
+while len(workList)>0 or len(connList)>0:
+    if len(workList)>0 and time.time()-start>=workList[0].time:
+        print "connection made at: "+str(workList[0].time)
+        workList.pop(0)
+print "done"
