@@ -1,7 +1,6 @@
 #By Ruchi Gupta, z3473389, and Michael Jefferies, z3418370
 
 import sys
-import time
 
 #
 #
@@ -150,9 +149,6 @@ for line in work:
 #
 #
 
-# The time at which the simulation started
-start = time.time()
-
 # The list of currently simulated connections
 # Add them as they start. pop them as they end.
 connList = []
@@ -162,11 +158,7 @@ connList = []
 # If we do that, eventually that list will empty.
 # Once both lists are empty, there's nothing left to do and we can print the results
 
-print "starting at: %f" %start
-print "need to make %d connections" %len(workList)
-
 while len(workList)>0 or len(connList)>0:
-    if len(workList)>0 and time.time()-start>=workList[0].time:
-        print "connection made at: "+str(workList[0].time)
-        workList.pop(0)
+    print "connection made at: "+str(workList[0].time)
+    workList.pop(0)
 print "done"
