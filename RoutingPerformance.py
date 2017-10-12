@@ -30,6 +30,14 @@ class Connection:
         # the index of the node this connection is sending information to
         self.tnode = toNode
 
+# packet
+#class Packet:
+    #def __init__(self,
+
+        #send time
+        #time that it reaches next node
+
+
 #
 #
 # READING IN ARGUMENTS AND INITIALISING VARIABLES
@@ -149,10 +157,6 @@ for line in work:
 #
 #
 
-# The list of currently simulated connections
-# Add them as they start. pop them as they end.
-connList = []
-
 # since the connections are sorted by time by default
 # I figure we can just look at the first in the work list, then pop them off as we start them
 # If we do that, eventually that list will empty.
@@ -162,3 +166,42 @@ while len(workList)>0 or len(connList)>0:
     print "connection made at: "+str(workList[0].time)
     workList.pop(0)
 print "done"
+
+
+
+# EVERTHING AFTER HERE IS JUST A COMMENT
+
+
+
+#List of Packets
+
+#if next thing is start a new connect
+    #search for path using A* with command line determined thing
+    #create packet instances based on that
+    #add those packets to packet list
+    #add relevant statistics
+    #pop connection from connection list
+#else if next thing is a packet changing state
+    #update packet, resort packet list
+
+#when connection and packet lists are both empty, script is done
+
+
+
+
+#TASKS
+
+#nodeDict['A']['B'] instance of Link object from A to B
+
+
+#FOR THE WEEKEND
+#Above loop for creating and interacting with packets
+#A* for SHP and SDP returns list of characters ["A", "C" etc']
+
+#BY WEDNEDSAY, MAYBE COLLAB ON TUESDAY?
+#LLP
+
+#ON THURSDAY SCREENCAST
+
+
+# NOTE TO SELF, if I edit nodeDict['A']['B'], does that also change nodeDict['B']['A']
