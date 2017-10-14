@@ -31,12 +31,16 @@ class Connection:
         self.tnode = toNode
 
 # packet
-#class Packet:
-    #def __init__(self,
-
-        #send time
-        #time that it reaches next node
-
+class Packet:
+    def __init__(self,time,path)
+        # The time at which this packet will reach the next node on its path (or be sent)
+        self.time = time
+        # the node that this packet is travelling from
+        self.from
+        # the current node that this packet is travelling to (or will be sent from)
+        self.node = path.pop()
+        # The remaining nodes on its path
+        self.path
 
 #
 #
@@ -174,6 +178,9 @@ packList = []
 while len(workList)>0 or len(packList)>0:
     if(workList[0].time>=packList[0].time):
         print "THIS IS WHERE WE CALL THE SEARCH FUNCTION AND CREATE PACKETS
+
+        # path = [INSERT SEARCH FUNCTION CALL HERE]
+        path = ['A','B','C','D','E','F','G','H'] # Test path just to make sure everything else works
     else:
         print "MOVE PACKET TO NEXT NODE HERE"
     # Following lines are just to avoid an infinite loop while this is incomplete
