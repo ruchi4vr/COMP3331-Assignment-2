@@ -169,12 +169,16 @@ totalDelay = 0 # Again, will divide to get average
 # If we do that, eventually that list will empty.
 # Once both lists are empty, there's nothing left to do and we can print the results
 
-while len(workList)>0 or len(connList)>0:
-    print "connection made at: "+str(workList[0].time)
-    workList.pop(0)
+packList = []
 
-
-
+while len(workList)>0 or len(packList)>0:
+    if(workList[0].time>=packList[0].time):
+        print "THIS IS WHERE WE CALL THE SEARCH FUNCTION AND CREATE PACKETS
+    else:
+        print "MOVE PACKET TO NEXT NODE HERE"
+    # Following lines are just to avoid an infinite loop while this is incomplete
+    workList = []
+    packList = []
 
 
 #
