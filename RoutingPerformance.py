@@ -172,9 +172,30 @@ totalDelay = 0 # Again, will divide to get average
 while len(workList)>0 or len(connList)>0:
     print "connection made at: "+str(workList[0].time)
     workList.pop(0)
-print "done"
 
 
+
+
+
+#
+#
+# PRINTING OUT THE RESULTS
+#
+#
+
+# calculating derived statistics
+sucPer = (float(successPackets)/float(numPackets))*100
+avHop = (float(totalHops)/float(numRequests))
+avProp = (float(totalDelay)/float(numRequests))
+
+print "total number of virtual circuit requests: "+str(numRequests)
+print "total number of packets: "+str(numPackets)
+print "number of successfully routed packets: "+str(successPackets)
+print "percentage of successfully routed packets: "+str(sucPer)
+print "number of blocked packets: "+str(numPackets-successPackets)
+print "percentage of blocked packets: "+str(float(100)-sucPer)
+print "average number of hops per circuit: "+str(avHop)
+print "average cumulative propagation delay per circuit: "+str(avProp)
 
 # EVERTHING AFTER HERE IS JUST A COMMENT
 
