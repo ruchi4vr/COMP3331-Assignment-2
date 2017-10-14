@@ -32,11 +32,11 @@ class Connection:
 
 # packet
 class Packet:
-    def __init__(self,time,path)
+    def __init__(self,time,path):
         # The time at which this packet will reach the next node on its path (or be sent)
         self.time = time
         # the node that this packet is travelling from
-        self.from
+        self.fromNode = null
         # the current node that this packet is travelling to (or will be sent from)
         self.node = path.pop()
         # The remaining nodes on its path
@@ -176,8 +176,8 @@ totalDelay = 0 # Again, will divide to get average
 packList = []
 
 while len(workList)>0 or len(packList)>0:
-    if(workList[0].time>=packList[0].time):
-        print "THIS IS WHERE WE CALL THE SEARCH FUNCTION AND CREATE PACKETS
+    if(len(packList)<=0 or workList[0].time>=packList[0].time):
+        print "THIS IS WHERE WE CALL THE SEARCH FUNCTION AND CREATE PACKETS"
 
         # path = [INSERT SEARCH FUNCTION CALL HERE]
         path = ['A','B','C','D','E','F','G','H'] # Test path just to make sure everything else works
@@ -195,7 +195,10 @@ while len(workList)>0 or len(packList)>0:
 #
 
 # calculating derived statistics
-sucPer = (float(successPackets)/float(numPackets))*100
+try:
+    sucPer = (float(successPackets)/float(numPackets))*100
+except ZeroDivisionError:
+    sucPer = 0
 avHop = (float(totalHops)/float(numRequests))
 avProp = (float(totalDelay)/float(numRequests))
 
