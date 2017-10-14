@@ -32,15 +32,20 @@ class Connection:
 
 # packet
 class Packet:
-    def __init__(self,time,path):
+    def __init__(self,time,path,last):
         # The time at which this packet will reach the next node on its path (or be sent)
         self.time = time
         # the node that this packet is travelling from
         self.fromNode = null
-        # the current node that this packet is travelling to (or will be sent from)
-        self.node = path.pop()
+        # Flags this as the last package in CIRCUIT communication
+        self.isLast = last
+        self.cachedPath = []
+        if isLast:
+            self.cachedPath = path[:]
         # The remaining nodes on its path
-        self.path
+        self.path = path[:]
+        # The node that the packet is travelling to
+        self.node = self.path.pop(0)
 
 #
 #
@@ -181,11 +186,21 @@ while len(workList)>0 or len(packList)>0:
 
         # path = [INSERT SEARCH FUNCTION CALL HERE]
         path = ['A','B','C','D','E','F','G','H'] # Test path just to make sure everything else works
+
+        circuitFree = True
+        # if circuit check path availability now. Set above variable to false
+
+
+        # if circuitFree, create packets and add them to packlist. DON'T FORGET TO USE [:]
+        # def __init__(self,time,path,last):
+
+
+        workList.pop(0)
     else:
         print "MOVE PACKET TO NEXT NODE HERE"
-    # Following lines are just to avoid an infinite loop while this is incomplete
-    workList = []
-    packList = []
+        # check if at last node in path
+        # if so, add to stats and remove. Don't forget to check circuit flag
+        # check if next 
 
 
 #
