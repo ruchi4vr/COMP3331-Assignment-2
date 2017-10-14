@@ -39,8 +39,9 @@ class Packet:
         self.fromNode = null
         # Flags this as the last package in CIRCUIT communication
         self.isLast = last
+        # A copy of the full path if this is the last packet in a circuit request. Used to free up capacity when done
         self.cachedPath = []
-        if isLast:
+        if self.isLast:
             self.cachedPath = path[:]
         # The remaining nodes on its path
         self.path = path[:]
@@ -179,6 +180,7 @@ totalDelay = 0 # Again, will divide to get average
 # Once both lists are empty, there's nothing left to do and we can print the results
 
 packList = []
+# Variables from earlier are 'type', 'scheme', and 'rate'
 
 while len(workList)>0 or len(packList)>0:
     if(len(packList)<=0 or workList[0].time>=packList[0].time):
@@ -187,9 +189,23 @@ while len(workList)>0 or len(packList)>0:
         # path = [INSERT SEARCH FUNCTION CALL HERE]
         path = ['A','B','C','D','E','F','G','H'] # Test path just to make sure everything else works
 
+        # Updating statistics
+        totalHops += len(path)-1
+        for x in range(1,len(path)):
+            totalDelay += nodeDict[path[x-1]][path[x]].prop
+        # NEED TO CALCULATE TOTAL PACKETS
+
         circuitFree = True
         # if circuit check path availability now. Set above variable to false
+        if type == "CIRCUIT":
+            for x in range(1,len(path)):
+                if(nodeDict[path[x-1]][path[x]].cap-nodeDict[path[x-1]][path[x]].used)<=0:
+                    circuitFree = False
+            if circuitFree:
+                for y in range(1,len(path)):
+                    nodeDict[path[y-1]][path[y]].used+=1
 
+        
 
         # if circuitFree, create packets and add them to packlist. DON'T FORGET TO USE [:]
         # def __init__(self,time,path,last):
@@ -261,4 +277,4 @@ print "average cumulative propagation delay per circuit: "+str(avProp)
 #ON THURSDAY SCREENCAST
 
 
-# NOTE TO SELF, if I edit nodeDict['A']['B'], does that also change nodeDict['B']['A']
+# NOTE TO SELF, if I edit nodeDict['A']['B'], does that also change nodeDict['B']['A'] - ANSWER: YES, it does.
