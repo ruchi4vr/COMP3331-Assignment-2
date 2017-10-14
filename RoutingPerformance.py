@@ -146,10 +146,17 @@ for line in work:
 #for item in workList:
     #print item.fnode
 
+#
+#
+# HERE'S THE STATS WE NEED TO KEEP TRACK OF
+#
+#
 
-
-
-
+numRequests = len(workList)
+numPackets = 0
+successPackets = 0 # Failed packets and percentages can be derived
+totalHops = 0 # Will divide by numRequests at the end to get average
+totalDelay = 0 # Again, will divide to get average
 
 #
 #
