@@ -184,16 +184,17 @@ packList = []
 
 while len(workList)>0 or len(packList)>0:
     if(len(packList)<=0 or workList[0].time>=packList[0].time):
-        print "THIS IS WHERE WE CALL THE SEARCH FUNCTION AND CREATE PACKETS"
-
         # path = [INSERT SEARCH FUNCTION CALL HERE]
         path = ['A','B','C','D','E','F','G','H'] # Test path just to make sure everything else works
+
+        work = workList.pop(0)
 
         # Updating statistics
         totalHops += len(path)-1
         for x in range(1,len(path)):
             totalDelay += nodeDict[path[x-1]][path[x]].prop
-        # NEED TO CALCULATE TOTAL PACKETS
+        packets = int(round(float(rate)*work.length))
+        numPackets += packets
 
         circuitFree = True
         # if circuit check path availability now. Set above variable to false
@@ -205,13 +206,13 @@ while len(workList)>0 or len(packList)>0:
                 for y in range(1,len(path)):
                     nodeDict[path[y-1]][path[y]].used+=1
 
-        
+        if circuitFree:
+            print "create pakets here"
+            
 
         # if circuitFree, create packets and add them to packlist. DON'T FORGET TO USE [:]
         # def __init__(self,time,path,last):
 
-
-        workList.pop(0)
     else:
         print "MOVE PACKET TO NEXT NODE HERE"
         # check if at last node in path
