@@ -4,6 +4,42 @@ import sys
 
 #
 #
+# READING IN ARGUMENTS AND INITIALISING VARIABLES
+#
+#
+
+# checking that there are at least 5 arguments. Not sure if this is needed, but I thought I would check anyway.
+try: sys.argv[5]
+except IndexError: print "ERROR: not enough arguments"
+
+# network type - "CIRCUIT" or "PACKET"
+type = sys.argv[1]
+
+# network scheme - "SHP", "SDP", or "LLP"
+scheme = sys.argv[2]
+
+# Packet rate, in packets per second
+rate = sys.argv[5]
+
+# reading in the topology text file
+with open(sys.argv[3]) as topFile:
+    top = topFile.readlines()
+# stripping out the newline characters
+top = [x.strip() for x in top]
+
+# reading in the workload text file
+with open(sys.argv[4]) as workFile:
+    work = workFile.readlines()
+# stripping out the newline characters
+work = [x.strip() for x in work]
+
+
+# List of nodes in the graph. Key is the node's letter (e.g "A", "B").
+# Value is a dictionary for the node's adjacency list
+nodeDict = {}
+
+#
+#
 # DEFINING SOME CLASSES
 #
 #
@@ -46,47 +82,37 @@ class Packet:
 
 # class used in search functions
 class SearchNode:
-    def __init__(self, newList, fVal):
+    def __init__(self, currentNode, newList):
+        # Current Node in the network
+        self.node = currentNode
+        # Path so far, NOT including current Node
         self.list = newList
-        self.val = fval
-    #def __eq__(self, other):
-    #    
+        # Search value for this path (i.e. number of Hops, or total delay, or used capacity)
+        if scheme == "SHP":
+            # As the list doesn't include current node, length of that list = number of hops.
+            self.val = len(self.list)
+        elif scheme == "SDP":
+            totDelay = 0
+            for node in self.list:
+                nIndex = self.list.index(node)
+                # If this is the last node in the path
+                if nIndex==len(self.list)-1:
+                    totDelay += nodeDict[node][self.node].prop
+                else:
+                    totDelay += nodeDict[node][self.list[nIndex+1].prop
+            self.val = totDelay
+        else: #LLP
+            self.val = 0
 
 #
 #
-# READING IN ARGUMENTS AND INITIALISING VARIABLES
+# SEARCH FUNCTION. JUST ONE. FOR ALL THREE CASES. THE HOLY TRINITY OF SEARCH FUNCTIONS, YOU COULD SAY.
 #
 #
 
-# checking that there are at least 5 arguments. Not sure if this is needed, but I thought I would check anyway.
-try: sys.argv[5]
-except IndexError: print "ERROR: not enough arguments"
-
-# network type - "CIRCUIT" or "PACKET"
-type = sys.argv[1]
-
-# network scheme - "SHP", "SDP", or "LLP"
-scheme = sys.argv[2]
-
-# Packet rate, in packets per second
-rate = sys.argv[5]
-
-# reading in the topology text file
-with open(sys.argv[3]) as topFile:
-    top = topFile.readlines()
-# stripping out the newline characters
-top = [x.strip() for x in top]
-
-# reading in the workload text file
-with open(sys.argv[4]) as workFile:
-    work = workFile.readlines()
-# stripping out the newline characters
-work = [x.strip() for x in work]
-
-
-# List of nodes in the graph. Key is the node's letter (e.g "A", "B").
-# Value is a dictionary for the node's adjacency list
-nodeDict = {}
+def Search(fromNode, toNode):
+    # Sorted list of SearchNodes. Current - 
+    return 0
 
 #
 #
