@@ -103,7 +103,18 @@ class SearchNode:
                     totDelay += nodeDict[node][self.list[nIndex+1]].prop
             self.val = totDelay
         else: #LLP
-            self.val = 0
+            maxLoad = 0.0
+            for node in self.list:
+                nIndex = self.list.index(node)
+                # If this is the last node in the path
+                if nIndex==len(self.list)-1:
+                    linkLoad = float(nodeDict[node][self.node].used)/float(nodeDict[node][self.node].cap)
+                else:
+                    link = nodeDict[node][self.list[nIndex+1]]
+                    linkLoad = float(link.used)/float(link.cap)
+                if linkLoad > maxLoad:
+                    maxLoad = linkLoad
+            self.val = maxLoad
 
 #
 #
