@@ -88,6 +88,7 @@ class SearchNode:
         # Path so far, NOT including current Node
         self.list = newList
         # Search value for this path (i.e. number of Hops, or total delay, or used capacity)
+        self.val
         if scheme == "SHP":
             # As the list doesn't include current node, length of that list = number of hops.
             self.val = len(self.list)
@@ -99,7 +100,7 @@ class SearchNode:
                 if nIndex==len(self.list)-1:
                     totDelay += nodeDict[node][self.node].prop
                 else:
-                    totDelay += nodeDict[node][self.list[nIndex+1].prop
+                    totDelay += nodeDict[node][self.list[nIndex+1]].prop
             self.val = totDelay
         else: #LLP
             self.val = 0
