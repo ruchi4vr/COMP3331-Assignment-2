@@ -32,21 +32,25 @@ class Connection:
 
 # packet
 class Packet:
-    def __init__(self,time,path,last):
+    def __init__(self,time,path,num):
         # The time at which this packet will reach the next node on its path (or be sent)
         self.time = time
         # the node that this packet is travelling from
-        self.fromNode = null
-        # Flags this as the last package in CIRCUIT communication
-        self.isLast = last
-        # A copy of the full path if this is the last packet in a circuit request. Used to free up capacity when done
-        self.cachedPath = []
-        if self.isLast:
-            self.cachedPath = path[:]
+        self.fromNode = None
         # The remaining nodes on its path
         self.path = path[:]
         # The node that the packet is travelling to
         self.node = self.path.pop(0)
+        # The number of packets in the connection that this packet is a part of. Used for statistics.
+        self.number = num
+
+# class used in search functions
+class SearchNode:
+    def __init__(self, newList, fVal):
+        self.list = newList
+        self.val = fval
+    #def __eq__(self, other):
+    #    
 
 #
 #
@@ -183,7 +187,8 @@ packList = []
 # Variables from earlier are 'type', 'scheme', and 'rate'
 
 while len(workList)>0 or len(packList)>0:
-    if(len(packList)<=0 or workList[0].time>=packList[0].time):
+    #if(len(workList)<=0 or
+    if(len(packList)<=0 or workList[0].time<=packList[0].time):
         # path = [INSERT SEARCH FUNCTION CALL HERE]
         path = ['A','B','C','D','E','F','G','H'] # Test path just to make sure everything else works
 
@@ -207,14 +212,17 @@ while len(workList)>0 or len(packList)>0:
                     nodeDict[path[y-1]][path[y]].used+=1
 
         if circuitFree:
-            print "create pakets here"
-            
+            for x in range(0,packets):
+                newPack = Packet(x*(1.0/float(rate))+work.time,path,packets)
+                packList.append(newPack)
+            packList.sort(key=lambda y: y.time)
 
         # if circuitFree, create packets and add them to packlist. DON'T FORGET TO USE [:]
-        # def __init__(self,time,path,last):
+        # def __init__(self,time,path,num):
 
     else:
-        print "MOVE PACKET TO NEXT NODE HERE"
+        packList.pop(0)
+        #print "MOVE PACKET TO NEXT NODE HERE"
         # check if at last node in path
         # if so, add to stats and remove. Don't forget to check circuit flag
         # check if next 
