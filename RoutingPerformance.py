@@ -56,6 +56,8 @@ class Link:
 
 # A container for the information regarding a connection that we need to simulate
 class Connection:
+    # A cache of the path. Only used in circuit mode.
+    path = None
     def __init__(self, startTime, duration, fromNode, toNode):
         # When this connection should start
         self.time = float(startTime)
@@ -65,6 +67,8 @@ class Connection:
         self.fnode = fromNode
         # the index of the node this connection is sending information to
         self.tnode = toNode
+        # the number of packets in this Connection
+        self.packets = int(round(self.length*float(rate)))
 
 # packet
 class Packet:
@@ -112,12 +116,18 @@ class SearchNode:
                     maxLoad = linkLoad
             self.val = maxLoad
 
+class Path:
+    def __init__(self, list, delay):
+        self.path = list
+        self.pdel = delay
+
 #
 #
 # SEARCH FUNCTION. JUST ONE. FOR ALL THREE CASES. THREE IN ONE. THE HOLY TRINITY OF SEARCH FUNCTIONS, YOU COULD SAY.
 #
 #
 
+# returns an instance of the Path class
 def Search(fromNode, toNode):
     foundNodes = []
     expNodes = []
@@ -161,8 +171,15 @@ def Search(fromNode, toNode):
                     foundNodes.append(newSNode)
                     foundNodes.sort(key=lambda x: x.val)
         if cNode.node == toNode:
-            toReturn = cNode.list
-            toReturn.append(cNode.node)
+            list = cNode.list
+            list.append(cNode.node)
+            if scheme == "SDP":
+                toReturn = Path(list, cNode.val)
+            else:
+                delay = 0
+                for x in range(1, len(list)):
+                    delay += nodeDict[list[x-1]][list[x]].prop
+                toReturn = Path(list, delay)
             return toReturn
         else:
             expNodes.append(cNode)
@@ -249,6 +266,7 @@ for line in work:
 #
 
 numRequests = len(workList)
+successRequests = 0
 numPackets = 0
 successPackets = 0 # Failed packets and percentages can be derived
 totalHops = 0 # Will divide by numRequests at the end to get average
@@ -256,27 +274,88 @@ totalDelay = 0 # Again, will divide to get average
 
 #
 #
+# LOOP FOR TESTING SEARCH FUNCITON
+#
+#
+
+# Variables from earlier are 'type', 'scheme', and 'rate'
+
+#while len(workList)>0:
+#    connect = workList.pop(0)
+#    path = Search(connect.fnode, connect.tnode)
+#    for x in range(1,len(path)):
+#        nodeDict[path[x-1]][path[x]].used+=1
+#        print "Using "+str(nodeDict[path[x-1]][path[x]].used)+" of capacity "+str(nodeDict[path[x-1]][path[x]].cap)
+#    print "Path length from "+connect.fnode+" to "+connect.tnode+": "+str(len(path))
+#    for x in path:
+#        print x
+
+#
+#
 # SIMULATING THE CONNECTIONS
 #
 #
 
-# since the connections are sorted by time by default
-# I figure we can just look at the first in the work list, then pop them off as we start them
-# If we do that, eventually that list will empty.
-# Once both lists are empty, there's nothing left to do and we can print the results
-
-packList = []
 # Variables from earlier are 'type', 'scheme', and 'rate'
 
-while len(workList)>0:
-    connect = workList.pop(0)
-    path = Search(connect.fnode, connect.tnode)
-    for x in range(1,len(path)):
-        nodeDict[path[x-1]][path[x]].used+=1
-        print "Using "+str(nodeDict[path[x-1]][path[x]].used)+" of capacity "+str(nodeDict[path[x-1]][path[x]].cap)
-    print "Path length from "+connect.fnode+" to "+connect.tnode+": "+str(len(path))
-    for x in path:
-        print x
+# LINK: cap, delay -> used, cap, prop
+# CONNECTION: start, dur, from, to -> time, length, fnode, tnode
+
+#
+# DO NOT FORGET TO ADD THE DUR TO START TIME FOR SORTED LIST.
+#
+
+if type == "CIRCUIT":
+    # List of connections currently beings simulated
+    openConns = []
+    while len(workList)>0 or len(openConns)>0:
+        if len(workList)>0 and (len(openConns)<=0 or workList[0].time < openConns[0].time):
+            current = workList.pop(0)
+            numPackets += current.packets # Updating statistics concerning number of packets
+
+            path = Search(current.fnode, current.tnode)
+
+            # Checking if the path has the available capacity for this connection
+            free = True
+            for x in range(1,len(path.path)):
+                link = nodeDict[path.path[x-1]][path.path[x]]
+                if link.used >= link.cap:
+                    free = False
+                    break
+            if free:
+                # Changing the time field to be the time that this connection closes, so openConns sorts correctly
+                current.time += current.length
+                # caching the path
+                current.path = path
+
+                openConns.append(current)
+                openConns.sort(key=lambda x: x.time)
+
+                # Updating the currently used capacity along the path
+                for x in range(1,len(path.path)):
+                    nodeDict[path.path[x-1]][path.path[x]].used+=1
+            
+        else:
+            current = openConns.pop(0)
+
+            # Updating statistics
+            successPackets += current.packets
+            successRequests += 1
+            totalHops += len(current.path.path)-1
+            totalDelay += current.path.pdel
+
+            # freeing up path capacity
+            for x in range(1,len(current.path.path)):
+                nodeDict[path.path[x-1]][path.path[x]].used-=1
+
+
+#
+#
+# PACKET SWITCHING HERE
+#
+#
+else:
+    print "no"
 
 #while len(workList)>0 or len(packList)>0:
 #    #if(len(workList)<=0 or
