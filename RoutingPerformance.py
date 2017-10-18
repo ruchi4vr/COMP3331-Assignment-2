@@ -265,12 +265,15 @@ totalDelay = 0 # Again, will divide to get average
 packList = []
 # Variables from earlier are 'type', 'scheme', and 'rate'
 
-connect = workList.pop(0)
-path = Search(connect.fnode, connect.tnode)
-
-print len(path)
-for x in path:
-    print x
+while len(workList)>0:
+    connect = workList.pop(0)
+    path = Search(connect.fnode, connect.tnode)
+    for x in range(1,len(path)):
+        nodeDict[path[x-1]][path[x]].used+=1
+        print "Using "+str(nodeDict[path[x-1]][path[x]].used)+" of capacity "+str(nodeDict[path[x-1]][path[x]].cap)
+    print "Path length from "+connect.fnode+" to "+connect.tnode+": "+str(len(path))
+    for x in path:
+        print x
 
 #while len(workList)>0 or len(packList)>0:
 #    #if(len(workList)<=0 or
