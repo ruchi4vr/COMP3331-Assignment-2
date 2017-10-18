@@ -82,26 +82,19 @@ class Packet:
 
 # class used in search functions
 class SearchNode:
-    def __init__(self, currentNode, newList):
+    def __init__(self, currentNode, newList, prevVal):
         # Current Node in the network
         self.node = currentNode
         # Path so far, NOT including current Node
         self.list = newList
         # Search value for this path (i.e. number of Hops, or total delay, or used capacity)
-        self.val
+        self.val = 0
         if scheme == "SHP":
             # As the list doesn't include current node, length of that list = number of hops.
-            self.val = len(self.list)
+            self.val = prevVal+1
         elif scheme == "SDP":
-            totDelay = 0
-            for node in self.list:
-                nIndex = self.list.index(node)
-                # If this is the last node in the path
-                if nIndex==len(self.list)-1:
-                    totDelay += nodeDict[node][self.node].prop
-                else:
-                    totDelay += nodeDict[node][self.list[nIndex+1]].prop
-            self.val = totDelay
+            listLen = len(self.list)
+            self.val = prevVal + nodeDict[listLen-1][self.node].prop
         else: #LLP
             maxLoad = 0.0
             for node in self.list:
@@ -123,8 +116,56 @@ class SearchNode:
 #
 
 def Search(fromNode, toNode):
-    # Sorted list of SearchNodes. Current - 
-    return 0
+    foundNodes = []
+    expNodes = []
+
+    # creating the initial SearchNode
+    newSNode = SearchNode(fromNode, [], 0)
+
+    foundNodes.append(newSNode)
+
+    while len(foundNodes)>0:
+        cNode = foundNodes.pop(0)
+        for key in nodeDict[cNode.node].keys():
+            nList = cNode.list[:]
+            nList.append(cNode.node)
+
+            newSNode = SearchNode(key, nList, cNode.val)
+
+            otherNode = None
+
+            # Check if a path to this Node has already been found
+            for x in foundNodes:
+                if x.node == newSNode.node:
+                    otherNode = x
+
+            if otherNode != None:
+                if newSNode.val<otherNode.val:
+                    foundNodes.remove(otherNode)
+                    foundNodes.append(newSNode)
+                    foundNodes.sort(key=lambda x: x.val)
+            else:
+                # Same thing, but for the expanded nodes.
+                for x in expNodes:
+                    if x.node == newSNode.node:
+                        otherNode = x
+                if otherNode != None: 
+                    if newSNode.val<otherNode.val:
+                        expNodes.remove(otherNode)
+                        foundNodes.append(newSNode)
+                        foundNodes.sort(key=lambda x: x.val)
+                else:
+                    foundNodes.append(newSNode)
+                    foundNodes.sort(key=lambda x: x.val)
+        if cNode.node == toNode:
+            toReturn = cNode.list
+            toReturn.append(cNode.node)
+            return toReturn
+        else:
+            expNodes.append(cNode)
+    print "returning null"
+    return None
+
 
 #
 #
@@ -188,9 +229,9 @@ for line in work:
 #
 
 #for item in nodeDict:
-    #print item
-    #for i2 in nodeDict[item]:
-        #print "link: "+i2
+#    print item
+#    for i2 in nodeDict[item]:
+#        print "link: "+i2
 
 #
 # SAME THING FOR WORK LIST
@@ -224,46 +265,53 @@ totalDelay = 0 # Again, will divide to get average
 packList = []
 # Variables from earlier are 'type', 'scheme', and 'rate'
 
-while len(workList)>0 or len(packList)>0:
-    #if(len(workList)<=0 or
-    if(len(packList)<=0 or workList[0].time<=packList[0].time):
-        # path = [INSERT SEARCH FUNCTION CALL HERE]
-        path = ['A','B','C','D','E','F','G','H'] # Test path just to make sure everything else works
+connect = workList.pop(0)
+path = Search(connect.fnode, connect.tnode)
 
-        work = workList.pop(0)
+print len(path)
+for x in path:
+    print x
 
-        # Updating statistics
-        totalHops += len(path)-1
-        for x in range(1,len(path)):
-            totalDelay += nodeDict[path[x-1]][path[x]].prop
-        packets = int(round(float(rate)*work.length))
-        numPackets += packets
+#while len(workList)>0 or len(packList)>0:
+#    #if(len(workList)<=0 or
+#    if(len(packList)<=0 or workList[0].time<=packList[0].time):
+#        # path = [INSERT SEARCH FUNCTION CALL HERE]
+#        path = ['A','B','C','D','E','F','G','H'] # Test path just to make sure everything else works
 
-        circuitFree = True
-        # if circuit check path availability now. Set above variable to false
-        if type == "CIRCUIT":
-            for x in range(1,len(path)):
-                if(nodeDict[path[x-1]][path[x]].cap-nodeDict[path[x-1]][path[x]].used)<=0:
-                    circuitFree = False
-            if circuitFree:
-                for y in range(1,len(path)):
-                    nodeDict[path[y-1]][path[y]].used+=1
+#        work = workList.pop(0)
 
-        if circuitFree:
-            for x in range(0,packets):
-                newPack = Packet(x*(1.0/float(rate))+work.time,path,packets)
-                packList.append(newPack)
-            packList.sort(key=lambda y: y.time)
+#        # Updating statistics
+#        totalHops += len(path)-1
+#        for x in range(1,len(path)):
+#            totalDelay += nodeDict[path[x-1]][path[x]].prop
+#        packets = int(round(float(rate)*work.length))
+#        numPackets += packets
 
-        # if circuitFree, create packets and add them to packlist. DON'T FORGET TO USE [:]
-        # def __init__(self,time,path,num):
+#        circuitFree = True
+#        # if circuit check path availability now. Set above variable to false
+#        if type == "CIRCUIT":
+#            for x in range(1,len(path)):
+#                if(nodeDict[path[x-1]][path[x]].cap-nodeDict[path[x-1]][path[x]].used)<=0:
+#                    circuitFree = False
+#            if circuitFree:
+#                for y in range(1,len(path)):
+#                    nodeDict[path[y-1]][path[y]].used+=1
 
-    else:
-        packList.pop(0)
-        #print "MOVE PACKET TO NEXT NODE HERE"
-        # check if at last node in path
-        # if so, add to stats and remove. Don't forget to check circuit flag
-        # check if next 
+#        if circuitFree:
+#            for x in range(0,packets):
+#                newPack = Packet(x*(1.0/float(rate))+work.time,path,packets)
+#                packList.append(newPack)
+#            packList.sort(key=lambda y: y.time)
+
+#        # if circuitFree, create packets and add them to packlist. DON'T FORGET TO USE [:]
+#        # def __init__(self,time,path,num):
+
+#    else:
+#        packList.pop(0)
+#        #print "MOVE PACKET TO NEXT NODE HERE"
+#        # check if at last node in path
+#        # if so, add to stats and remove. Don't forget to check circuit flag
+#        # check if next 
 
 
 #
