@@ -346,8 +346,10 @@ if type == "CIRCUIT":
 
             # freeing up path capacity
             for x in range(1,len(current.path.path)):
-                nodeDict[path.path[x-1]][path.path[x]].used-=1
-
+                try:
+                    nodeDict[path.path[x-1]][path.path[x]].used-=1
+                except IndexError:
+                    print "ERROR AT INDEX: "+str(x)
 
 #
 #
