@@ -94,7 +94,10 @@ class SearchNode:
             self.val = prevVal+1
         elif scheme == "SDP":
             listLen = len(self.list)
-            self.val = prevVal + nodeDict[listLen-1][self.node].prop
+            if listLen<=0:
+                self.val = 0
+            else:
+                self.val = prevVal + nodeDict[self.list[listLen-1]][self.node].prop
         else: #LLP
             maxLoad = 0.0
             for node in self.list:
@@ -111,7 +114,7 @@ class SearchNode:
 
 #
 #
-# SEARCH FUNCTION. JUST ONE. FOR ALL THREE CASES. THE HOLY TRINITY OF SEARCH FUNCTIONS, YOU COULD SAY.
+# SEARCH FUNCTION. JUST ONE. FOR ALL THREE CASES. THREE IN ONE. THE HOLY TRINITY OF SEARCH FUNCTIONS, YOU COULD SAY.
 #
 #
 
