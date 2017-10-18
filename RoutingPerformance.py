@@ -68,7 +68,7 @@ class Connection:
         # the index of the node this connection is sending information to
         self.tnode = toNode
         # the number of packets in this Connection
-        self.packets = int(round(self.length*float(rate)))
+        self.packets = int(self.length*float(rate))
 
 # packet
 class Packet:
@@ -347,7 +347,7 @@ if type == "CIRCUIT":
             # freeing up path capacity
             for x in range(1,len(current.path.path)):
                 try:
-                    nodeDict[path.path[x-1]][path.path[x]].used-=1
+                    nodeDict[current.path.path[x-1]][current.path.path[x]].used-=1
                 except IndexError:
                     print "ERROR AT INDEX: "+str(x)
 
@@ -418,11 +418,11 @@ avProp = (float(totalDelay)/float(numRequests))
 print "total number of virtual circuit requests: "+str(numRequests)
 print "total number of packets: "+str(numPackets)
 print "number of successfully routed packets: "+str(successPackets)
-print "percentage of successfully routed packets: "+str(sucPer)
+print "percentage of successfully routed packets: "+str(round(sucPer,2))
 print "number of blocked packets: "+str(numPackets-successPackets)
-print "percentage of blocked packets: "+str(float(100)-sucPer)
-print "average number of hops per circuit: "+str(avHop)
-print "average cumulative propagation delay per circuit: "+str(avProp)
+print "percentage of blocked packets: "+str(round(float(100)-sucPer,2))
+print "average number of hops per circuit: "+str(round(avHop,2))
+print "average cumulative propagation delay per circuit: "+str(round(avProp,2))
 
 # EVERTHING AFTER HERE IS JUST A COMMENT
 
