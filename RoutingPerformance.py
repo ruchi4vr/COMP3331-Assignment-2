@@ -1,6 +1,7 @@
-#By Ruchi Gupta, z3473389, and Michael Jefferies, z3418370
+# By Michael Jefferies, z3418370
 
 import sys
+import time
 
 #
 #
@@ -33,19 +34,10 @@ with open(sys.argv[4]) as workFile:
 # stripping out the newline characters
 work = [x.strip() for x in work]
 
-flag = False
 updates = False
-# Used to trigger alternate behaviour in packet mode, detailed in report
+runTime = time.time()
+# Used to trigger debug print statements
 if len(sys.argv)>6:
-    if sys.argv[6] == "ALT" and type == "PACKET":
-        flag = True
-    elif sys.argv[6] == "PRINT":
-        updates = True
-
-if len(sys.argv)>7:
-    if sys.argv[7] == "ALT" and type == "PACKET":
-        flag = True
-    elif sys.argv[7] == "PRINT":
         updates = True
 
 # List of nodes in the graph. Key is the node's letter (e.g "A", "B").
@@ -84,21 +76,7 @@ class Connection:
         # the number of packets in this Connection
         self.packets = int(self.length*float(rate))
 
-# A packet class. This is only being used in my alternative implementation of the PACKET mode.
-class Packet:
-    def __init__(self,time,path,num):
-        # The time at which this packet will reach the next node on its path (or be sent)
-        self.time = time
-        # the node that this packet is travelling from
-        self.fromNode = None
-        # The remaining nodes on its path
-        self.path = path[:]
-        # The node that the packet is travelling to
-        self.node = self.path.pop(0)
-        # The number of packets in the connection that this packet is a part of. Used for statistics.
-        self.number = num
-
-# class used in search functions
+# class used in the search function
 class SearchNode:
     def __init__(self, currentNode, newList, prevVal):
         # Current Node in the network
@@ -190,7 +168,7 @@ def Search(fromNode, toNode):
             if scheme == "SDP":
                 toReturn = Path(list, cNode.val)
             else:
-                delay = 0
+                delay = 0.0
                 for x in range(1, len(list)):
                     delay += nodeDict[list[x-1]][list[x]].prop
                 toReturn = Path(list, delay)
@@ -235,7 +213,7 @@ for line in top:
         nodeDict[n2] = {}
     
     # Create instance of link class
-    link = Link(capacity,delay)
+    link = Link(capacity,float(delay))
     
     # if there's no link between the nodes, add the link
     if n2 not in nodeDict[n1]:
@@ -246,7 +224,6 @@ for line in top:
 
 # List of connections that need to be made
 workList = []
-
 
 for line in work:
     # each line: [start time] [from node] [to node] [duration]
@@ -266,61 +243,27 @@ for line in work:
     # making an instance of the connection class
     connection = Connection(begins, duration, n1, n2)
     
-    if not flag and type == "PACKET":
+    if type == "PACKET":
         numRequests += 1
         interval = 1.0/float(rate)
-        time = connection.time
+        cTime = connection.time
         for x in range(0,connection.packets):
-            sTime = time + float(x)*interval
+            sTime = cTime + float(x)*interval
             packet = Connection(sTime, 1, connection.fnode, connection.tnode)
             workList.append(packet)
     else:
         # add connection to list of connections we need to simulate
         workList.append(connection)
 
+workList.sort(key=lambda x:x.time) # sorting worklist for good measure
 
 
 # Updating stats for number of requests. the else scenario is handle above.
-if flag or type == "CIRCUIT":
+if type == "CIRCUIT":
     numRequests = len(workList)
 else:
     numPackets = len(workList)
 
-
-# CONNECTION: start, dur, from, to -> time, length, fnode, tnode
-
-#
-# TEST PRINT LOOP TO CHECK NODE GRAPH INITIALISED CORRECTLY. SPOILER: IT DID.
-#
-
-#for item in nodeDict:
-#    print item
-#    for i2 in nodeDict[item]:
-#        print "link: "+i2
-
-#
-# SAME THING FOR WORK LIST
-#
-#for item in workList:
-    #print item.fnode
-
-#
-#
-# LOOP FOR TESTING SEARCH FUNCITON
-#
-#
-
-# Variables from earlier are 'type', 'scheme', and 'rate'
-
-#while len(workList)>0:
-#    connect = workList.pop(0)
-#    path = Search(connect.fnode, connect.tnode)
-#    for x in range(1,len(path)):
-#        nodeDict[path[x-1]][path[x]].used+=1
-#        print "Using "+str(nodeDict[path[x-1]][path[x]].used)+" of capacity "+str(nodeDict[path[x-1]][path[x]].cap)
-#    print "Path length from "+connect.fnode+" to "+connect.tnode+": "+str(len(path))
-#    for x in path:
-#        print x
 
 #
 #
@@ -328,19 +271,21 @@ else:
 #
 #
 
-# Variables from earlier are 'type', 'scheme', and 'rate'
-
-# LINK: cap, delay -> used, cap, prop
-# CONNECTION: start, dur, from, to -> time, length, fnode, tnode. ALSO path and packets
-
-#
-# DO NOT FORGET TO ADD THE DUR TO START TIME FOR SORTED LIST.
-#
-
 if type == "CIRCUIT":
     # List of connections currently beings simulated
     openConns = []
     while len(workList)>0 or len(openConns)>0:
+
+        if updates and time.time()-runTime>=12.0:
+            runTime = time.time()
+            if len(openConns)>0:
+                nTime = openConns[0].time
+            else:
+                nTime = workList[0].time
+            print "Currently at simulation time: "+str(nTime)
+            print str(len(workList))+" of "+str(numRequests)+" requests remaining"
+
+
         if len(workList)>0 and (len(openConns)<=0 or workList[0].time < openConns[0].time):
             current = workList.pop(0)
             numPackets += current.packets # Updating statistics concerning number of packets
@@ -366,7 +311,7 @@ if type == "CIRCUIT":
                 # Updating the currently used capacity along the path
                 for x in range(1,len(path.path)):
                     nodeDict[path.path[x-1]][path.path[x]].used+=1
-            
+
         else:
             current = openConns.pop(0)
 
@@ -374,7 +319,7 @@ if type == "CIRCUIT":
             successPackets += current.packets
             successRequests += 1
             totalHops += len(current.path.path)-1
-            totalDelay += current.path.pdel
+            totalDelay += current.path.pdel/1000.0 # dividing by 100 because the delay is in milliseconds
 
             # freeing up path capacity
             for x in range(1,len(current.path.path)):
@@ -388,110 +333,97 @@ if type == "CIRCUIT":
 # PACKET SWITCHING HERE
 #
 #
+
 else:
-    if not flag:
-        # List of packets currently going through the network
-        sent = []
-        while len(workList)>0 or len(sent)>0:
-            if len(workList)>0 and (len(sent)<=0 or workList[0].time < sent[0].time):
-                current = workList.pop(0)
+    # List of packets currently going through the network
+    sent = []
+    while len(workList)>0 or len(sent)>0:
 
-                path = Search(current.fnode, current.tnode)
+        # Debug statements every 12 seconds
+        if updates and time.time()-runTime>=12.0:
+            runTime = time.time()
+            if len(sent)>0:
+                nTime = sent[0].time
+            else:
+                nTime = workList[0].time
+            print "Currently at simulation time: "+str(nTime)
+            print str(len(workList))+" of "+str(numPackets)+" packets remaining"
 
-                # Checking if the path has the available capacity for this packet
-                free = True
-                delay = 0
+        if len(workList)>0 and (len(sent)<=0 or workList[0].time < sent[0].time):
+            current = workList.pop(0)
+
+            path = Search(current.fnode, current.tnode)
+
+            # Checking if the path has the available capacity for this packet
+            free = True
+            delay = 0
+            for x in range(1,len(path.path)):
+                link = nodeDict[path.path[x-1]][path.path[x]]
+                delay += link.prop
+                if link.used >= link.cap:
+                    print "DROPPED due to link "+path.path[x-1]+"-"+path.path[x]
+                    free = False
+                    break
+                
+            if free:
+                # print str(current.time)+"-----"+str(delay/1000.0)+"---->"+str(current.time+float(delay/1000.0))
+                # Changing the time field to be the time that this connection closes, so 'sent' sorts correctly
+                current.time += delay/1000.0
+                # print str(current.time)
+                current.length = delay/1000.0 # dividing by 100 to convert milliseconds to seconds
+                # caching the path
+                current.path = path
+
+                sent.append(current)
+                sent.sort(key=lambda x: x.time)
+
+                # Updating the currently used capacity along the path
                 for x in range(1,len(path.path)):
                     link = nodeDict[path.path[x-1]][path.path[x]]
-                    delay += link.prop
-                    if link.used >= link.cap:
-                        free = False
-                        break
-                if free:
-                    # Changing the time field to be the time that this connection closes, so 'sent' sorts correctly
-                    current.time += delay
-                    current.length = delay
-                    # caching the path
-                    current.path = path
+                    link.used+=1
 
-                    sent.append(current)
-                    sent.sort(key=lambda x: x.time)
+                    # Debug print statements
+                    #if updates:
+                    #    perc = float(link.used)/float(link.cap)*100.0
+                    #    if perc > 97:
+                    #        print "path "+path.path[x-1]+"->"+path.path[x]+" at "+str(perc)+"%. Currently "+str(link.used)+" of "+str(link.cap)
+                    #        print str(len(sent))+" active packets" 
 
-                    # Updating the currently used capacity along the path
-                    for x in range(1,len(path.path)):
-                        nodeDict[path.path[x-1]][path.path[x]].used+=1
+        else:
+            current = sent.pop(0)
+            # print "popped at: "+str(current.time)
+            # Updating statistics
+            successPackets += 1
+            totalHops += len(current.path.path)-1
+            totalDelay += current.path.pdel/1000.0
 
-            else:
-                current = sent.pop(0)
+            # freeing up path capacity
+            for x in range(1,len(current.path.path)):
+                link = nodeDict[current.path.path[x-1]][current.path.path[x]]
 
-                # Updating statistics
-                successPackets += 1
-                totalHops += len(current.path.path)-1
-                totalDelay += current.path.pdel
-
-                # freeing up path capacity
-                for x in range(1,len(current.path.path)):
-                    try:
-                        nodeDict[current.path.path[x-1]][current.path.path[x]].used-=1
-                    except IndexError:
-                        print "ERROR AT INDEX: "+str(x)
-
-#
-#
-# ALTERNATIVE PACKET IMPLEMENTATION
-#
-#
-
-    else:
-        print "complex"
-
-#while len(workList)>0 or len(packList)>0:
-#    #if(len(workList)<=0 or
-#    if(len(packList)<=0 or workList[0].time<=packList[0].time):
-#        # path = [INSERT SEARCH FUNCTION CALL HERE]
-#        path = ['A','B','C','D','E','F','G','H'] # Test path just to make sure everything else works
-
-#        work = workList.pop(0)
-
-#        # Updating statistics
-#        totalHops += len(path)-1
-#        for x in range(1,len(path)):
-#            totalDelay += nodeDict[path[x-1]][path[x]].prop
-#        packets = int(round(float(rate)*work.length))
-#        numPackets += packets
-
-#        circuitFree = True
-#        # if circuit check path availability now. Set above variable to false
-#        if type == "CIRCUIT":
-#            for x in range(1,len(path)):
-#                if(nodeDict[path[x-1]][path[x]].cap-nodeDict[path[x-1]][path[x]].used)<=0:
-#                    circuitFree = False
-#            if circuitFree:
-#                for y in range(1,len(path)):
-#                    nodeDict[path[y-1]][path[y]].used+=1
-
-#        if circuitFree:
-#            for x in range(0,packets):
-#                newPack = Packet(x*(1.0/float(rate))+work.time,path,packets)
-#                packList.append(newPack)
-#            packList.sort(key=lambda y: y.time)
-
-#        # if circuitFree, create packets and add them to packlist. DON'T FORGET TO USE [:]
-#        # def __init__(self,time,path,num):
-
-#    else:
-#        packList.pop(0)
-#        #print "MOVE PACKET TO NEXT NODE HERE"
-#        # check if at last node in path
-#        # if so, add to stats and remove. Don't forget to check circuit flag
-#        # check if next 
-
+                # Debug print statements
+                #if updates:
+                #    perc = float(link.used)/float(link.cap)*100.0
+                #    if perc > 97:
+                #        print "path "+current.path.path[x-1]+"->"+current.path.path[x]+" freed up"
+                #        print str(len(sent))+" active packets"
+                try:
+                   link.used-=1
+                except IndexError:
+                    print "ERROR AT INDEX: "+str(x)
 
 #
 #
 # PRINTING OUT THE RESULTS
 #
 #
+
+# Debug print statements
+if updates:
+    for x in nodeDict:
+        for y in nodeDict[x]:
+            if nodeDict[x][y].used>0:
+                print "Link "+x+"-"+y+" is faulty"
 
 # calculating derived statistics
 try:
@@ -513,40 +445,3 @@ print "number of blocked packets: "+str(numPackets-successPackets)
 print "percentage of blocked packets: "+str(round(float(100)-sucPer,2))
 print "average number of hops per circuit: "+str(round(avHop,2))
 print "average cumulative propagation delay per circuit: "+str(round(avProp,2))
-
-# EVERTHING AFTER HERE IS JUST A COMMENT
-
-
-
-#List of Packets
-
-#if next thing is start a new connect
-    #search for path using A* with command line determined thing
-    #create packet instances based on that
-    #add those packets to packet list
-    #add relevant statistics
-    #pop connection from connection list
-#else if next thing is a packet changing state
-    #update packet, resort packet list
-
-#when connection and packet lists are both empty, script is done
-
-
-
-
-#TASKS
-
-#nodeDict['A']['B'] instance of Link object from A to B
-
-
-#FOR THE WEEKEND
-#Above loop for creating and interacting with packets
-#A* for SHP and SDP returns list of characters ["A", "C" etc']
-
-#BY WEDNEDSAY, MAYBE COLLAB ON TUESDAY?
-#LLP
-
-#ON THURSDAY SCREENCAST
-
-
-# NOTE TO SELF, if I edit nodeDict['A']['B'], does that also change nodeDict['B']['A'] - ANSWER: YES, it does.
