@@ -33,6 +33,20 @@ with open(sys.argv[4]) as workFile:
 # stripping out the newline characters
 work = [x.strip() for x in work]
 
+flag = False
+updates = False
+# Used to trigger alternate behaviour in packet mode, detailed in report
+if len(sys.argv)>6:
+    if sys.argv[6] == "ALT" and type == "PACKET":
+        flag = True
+    elif sys.argv[6] == "PRINT":
+        updates = True
+
+if len(sys.argv)>7:
+    if sys.argv[7] == "ALT" and type == "PACKET":
+        flag = True
+    elif sys.argv[7] == "PRINT":
+        updates = True
 
 # List of nodes in the graph. Key is the node's letter (e.g "A", "B").
 # Value is a dictionary for the node's adjacency list
@@ -54,7 +68,7 @@ class Link:
         # the propogation delay of this link
         self.prop = float(delay)
 
-# A container for the information regarding a connection that we need to simulate
+# A container for the information regarding a connection that we need to simulate. Recycling this class in my packet implementation
 class Connection:
     # A cache of the path. Only used in circuit mode.
     path = None
@@ -70,7 +84,7 @@ class Connection:
         # the number of packets in this Connection
         self.packets = int(self.length*float(rate))
 
-# packet
+# A packet class. This is only being used in my alternative implementation of the PACKET mode.
 class Packet:
     def __init__(self,time,path,num):
         # The time at which this packet will reach the next node on its path (or be sent)
@@ -186,6 +200,18 @@ def Search(fromNode, toNode):
     print "returning null"
     return None
 
+#
+#
+# HERE'S THE STATS WE NEED TO KEEP TRACK OF
+#
+#
+
+numRequests = 0
+successRequests = 0
+numPackets = 0
+successPackets = 0 # Failed packets and percentages can be derived
+totalHops = 0 # Will divide by numRequests at the end to get average
+totalDelay = 0 # Again, will divide to get average
 
 #
 #
@@ -240,9 +266,28 @@ for line in work:
     # making an instance of the connection class
     connection = Connection(begins, duration, n1, n2)
     
-    # add connection to list of connections we need to simulate
-    workList.append(connection)
+    if not flag and type == "PACKET":
+        numRequests += 1
+        interval = 1.0/float(rate)
+        time = connection.time
+        for x in range(0,connection.packets):
+            sTime = time + float(x)*interval
+            packet = Connection(sTime, 1, connection.fnode, connection.tnode)
+            workList.append(packet)
+    else:
+        # add connection to list of connections we need to simulate
+        workList.append(connection)
 
+
+
+# Updating stats for number of requests. the else scenario is handle above.
+if flag or type == "CIRCUIT":
+    numRequests = len(workList)
+else:
+    numPackets = len(workList)
+
+
+# CONNECTION: start, dur, from, to -> time, length, fnode, tnode
 
 #
 # TEST PRINT LOOP TO CHECK NODE GRAPH INITIALISED CORRECTLY. SPOILER: IT DID.
@@ -258,19 +303,6 @@ for line in work:
 #
 #for item in workList:
     #print item.fnode
-
-#
-#
-# HERE'S THE STATS WE NEED TO KEEP TRACK OF
-#
-#
-
-numRequests = len(workList)
-successRequests = 0
-numPackets = 0
-successPackets = 0 # Failed packets and percentages can be derived
-totalHops = 0 # Will divide by numRequests at the end to get average
-totalDelay = 0 # Again, will divide to get average
 
 #
 #
@@ -299,7 +331,7 @@ totalDelay = 0 # Again, will divide to get average
 # Variables from earlier are 'type', 'scheme', and 'rate'
 
 # LINK: cap, delay -> used, cap, prop
-# CONNECTION: start, dur, from, to -> time, length, fnode, tnode
+# CONNECTION: start, dur, from, to -> time, length, fnode, tnode. ALSO path and packets
 
 #
 # DO NOT FORGET TO ADD THE DUR TO START TIME FOR SORTED LIST.
@@ -357,7 +389,61 @@ if type == "CIRCUIT":
 #
 #
 else:
-    print "no"
+    if not flag:
+        # List of packets currently going through the network
+        sent = []
+        while len(workList)>0 or len(sent)>0:
+            if len(workList)>0 and (len(sent)<=0 or workList[0].time < sent[0].time):
+                current = workList.pop(0)
+
+                path = Search(current.fnode, current.tnode)
+
+                # Checking if the path has the available capacity for this packet
+                free = True
+                delay = 0
+                for x in range(1,len(path.path)):
+                    link = nodeDict[path.path[x-1]][path.path[x]]
+                    delay += link.prop
+                    if link.used >= link.cap:
+                        free = False
+                        break
+                if free:
+                    # Changing the time field to be the time that this connection closes, so 'sent' sorts correctly
+                    current.time += delay
+                    current.length = delay
+                    # caching the path
+                    current.path = path
+
+                    sent.append(current)
+                    sent.sort(key=lambda x: x.time)
+
+                    # Updating the currently used capacity along the path
+                    for x in range(1,len(path.path)):
+                        nodeDict[path.path[x-1]][path.path[x]].used+=1
+
+            else:
+                current = sent.pop(0)
+
+                # Updating statistics
+                successPackets += 1
+                totalHops += len(current.path.path)-1
+                totalDelay += current.path.pdel
+
+                # freeing up path capacity
+                for x in range(1,len(current.path.path)):
+                    try:
+                        nodeDict[current.path.path[x-1]][current.path.path[x]].used-=1
+                    except IndexError:
+                        print "ERROR AT INDEX: "+str(x)
+
+#
+#
+# ALTERNATIVE PACKET IMPLEMENTATION
+#
+#
+
+    else:
+        print "complex"
 
 #while len(workList)>0 or len(packList)>0:
 #    #if(len(workList)<=0 or
@@ -412,8 +498,12 @@ try:
     sucPer = (float(successPackets)/float(numPackets))*100
 except ZeroDivisionError:
     sucPer = 0
-avHop = (float(totalHops)/float(numRequests))
-avProp = (float(totalDelay)/float(numRequests))
+if type == "CIRCUIT":
+    avHop = (float(totalHops)/float(successRequests))
+    avProp = (float(totalDelay)/float(successRequests))
+else:
+    avHop = (float(totalHops)/float(successPackets))
+    avProp = (float(totalDelay)/float(successPackets))
 
 print "total number of virtual circuit requests: "+str(numRequests)
 print "total number of packets: "+str(numPackets)
