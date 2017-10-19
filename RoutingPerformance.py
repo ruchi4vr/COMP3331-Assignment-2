@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # By Michael Jefferies, z3418370
 
 import sys
@@ -361,7 +362,8 @@ else:
                 link = nodeDict[path.path[x-1]][path.path[x]]
                 delay += link.prop
                 if link.used >= link.cap:
-                    print "DROPPED due to link "+path.path[x-1]+"-"+path.path[x]
+                    if updates:
+                        print "DROPPED due to link "+path.path[x-1]+"-"+path.path[x]
                     free = False
                     break
                 
