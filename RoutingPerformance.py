@@ -62,9 +62,9 @@ class Link:
         self.prop = float(delay)
 
 # A container for the information regarding a connection that we need to simulate. Recycling this class in my packet implementation
-class Connection:
-    # A cache of the path. Only used in circuit mode.
-    path = None
+class Request:
+    # A cache of the route.
+    route = None
     def __init__(self, startTime, duration, fromNode, toNode):
         # When this connection should start
         self.time = float(startTime)
@@ -109,7 +109,7 @@ class SearchNode:
                     maxLoad = linkLoad
             self.val = maxLoad
 
-class Path:
+class Route:
     def __init__(self, list, delay):
         self.path = list
         self.pdel = delay
@@ -167,12 +167,12 @@ def Search(fromNode, toNode):
             list = cNode.list
             list.append(cNode.node)
             if scheme == "SDP":
-                toReturn = Path(list, cNode.val)
+                toReturn = Route(list, cNode.val)
             else:
                 delay = 0.0
                 for x in range(1, len(list)):
                     delay += nodeDict[list[x-1]][list[x]].prop
-                toReturn = Path(list, delay)
+                toReturn = Route(list, delay)
             return toReturn
         else:
             expNodes.append(cNode)
@@ -241,20 +241,21 @@ for line in work:
     if n2 not in nodeDict:
         nodeDict[n2] = {}
     
-    # making an instance of the connection class
-    connection = Connection(begins, duration, n1, n2)
+    # making an instance of the request class
+    request = Request(begins, duration, n1, n2)
     
+    # If in packet mode, make the packets
     if type == "PACKET":
         numRequests += 1
         interval = 1.0/float(rate)
-        cTime = connection.time
-        for x in range(0,connection.packets):
+        cTime = request.time
+        for x in range(0,request.packets):
             sTime = cTime + float(x)*interval
-            packet = Connection(sTime, 1, connection.fnode, connection.tnode)
+            packet = Request(sTime, 1, request.fnode, request.tnode)
             workList.append(packet)
     else:
         # add connection to list of connections we need to simulate
-        workList.append(connection)
+        workList.append(request)
 
 workList.sort(key=lambda x:x.time) # sorting worklist for good measure
 
@@ -291,12 +292,12 @@ if type == "CIRCUIT":
             current = workList.pop(0)
             numPackets += current.packets # Updating statistics concerning number of packets
 
-            path = Search(current.fnode, current.tnode)
+            route = Search(current.fnode, current.tnode)
 
             # Checking if the path has the available capacity for this connection
             free = True
-            for x in range(1,len(path.path)):
-                link = nodeDict[path.path[x-1]][path.path[x]]
+            for x in range(1,len(route.path)):
+                link = nodeDict[route.path[x-1]][route.path[x]]
                 if link.used >= link.cap:
                     free = False
                     break
@@ -304,14 +305,16 @@ if type == "CIRCUIT":
                 # Changing the time field to be the time that this connection closes, so openConns sorts correctly
                 current.time += current.length
                 # caching the path
-                current.path = path
+                current.route = route
 
                 openConns.append(current)
                 openConns.sort(key=lambda x: x.time)
 
                 # Updating the currently used capacity along the path
-                for x in range(1,len(path.path)):
-                    nodeDict[path.path[x-1]][path.path[x]].used+=1
+                for x in range(1,len(route.path)):
+                    nodeDict[route.path[x-1]][route.path[x]].used+=1
+            elif updates:
+                print "BLOCKET: "+str(route.path)
 
         else:
             current = openConns.pop(0)
@@ -319,13 +322,13 @@ if type == "CIRCUIT":
             # Updating statistics
             successPackets += current.packets
             successRequests += 1
-            totalHops += len(current.path.path)-1
-            totalDelay += current.path.pdel/1000.0 # dividing by 100 because the delay is in milliseconds
+            totalHops += len(current.route.path)-1
+            totalDelay += current.route.pdel/1000.0 # dividing by 100 because the delay is in milliseconds
 
             # freeing up path capacity
-            for x in range(1,len(current.path.path)):
+            for x in range(1,len(current.route.path)):
                 try:
-                    nodeDict[current.path.path[x-1]][current.path.path[x]].used-=1
+                    nodeDict[current.route.path[x-1]][current.route.path[x]].used-=1
                 except IndexError:
                     print "ERROR AT INDEX: "+str(x)
 
@@ -350,20 +353,22 @@ else:
             print "Currently at simulation time: "+str(nTime)
             print str(len(workList))+" of "+str(numPackets)+" packets remaining"
 
+
+
         if len(workList)>0 and (len(sent)<=0 or workList[0].time < sent[0].time):
             current = workList.pop(0)
 
-            path = Search(current.fnode, current.tnode)
+            route = Search(current.fnode, current.tnode)
 
             # Checking if the path has the available capacity for this packet
             free = True
             delay = 0
-            for x in range(1,len(path.path)):
-                link = nodeDict[path.path[x-1]][path.path[x]]
+            for x in range(1,len(route.path)):
+                link = nodeDict[route.path[x-1]][route.path[x]]
                 delay += link.prop
                 if link.used >= link.cap:
                     if updates:
-                        print "DROPPED due to link "+path.path[x-1]+"-"+path.path[x]
+                        print "DROPPED due to link "+route.path[x-1]+"-"+route.path[x]
                     free = False
                     break
                 
@@ -374,21 +379,21 @@ else:
                 # print str(current.time)
                 current.length = delay/1000.0 # dividing by 100 to convert milliseconds to seconds
                 # caching the path
-                current.path = path
+                current.route = route
 
                 sent.append(current)
                 sent.sort(key=lambda x: x.time)
 
                 # Updating the currently used capacity along the path
-                for x in range(1,len(path.path)):
-                    link = nodeDict[path.path[x-1]][path.path[x]]
+                for x in range(1,len(route.path)):
+                    link = nodeDict[route.path[x-1]][route.path[x]]
                     link.used+=1
 
                     # Debug print statements
                     #if updates:
                     #    perc = float(link.used)/float(link.cap)*100.0
                     #    if perc > 97:
-                    #        print "path "+path.path[x-1]+"->"+path.path[x]+" at "+str(perc)+"%. Currently "+str(link.used)+" of "+str(link.cap)
+                    #        print "path "+route.path[x-1]+"->"+route.path[x]+" at "+str(perc)+"%. Currently "+str(link.used)+" of "+str(link.cap)
                     #        print str(len(sent))+" active packets" 
 
         else:
@@ -396,18 +401,18 @@ else:
             # print "popped at: "+str(current.time)
             # Updating statistics
             successPackets += 1
-            totalHops += len(current.path.path)-1
-            totalDelay += current.path.pdel/1000.0
+            totalHops += len(current.route.path)-1
+            totalDelay += current.route.pdel/1000.0
 
             # freeing up path capacity
-            for x in range(1,len(current.path.path)):
-                link = nodeDict[current.path.path[x-1]][current.path.path[x]]
+            for x in range(1,len(current.route.path)):
+                link = nodeDict[current.route.path[x-1]][current.route.path[x]]
 
                 # Debug print statements
                 #if updates:
                 #    perc = float(link.used)/float(link.cap)*100.0
                 #    if perc > 97:
-                #        print "path "+current.path.path[x-1]+"->"+current.path.path[x]+" freed up"
+                #        print "path "+current.route.path[x-1]+"->"+current.route.path[x]+" freed up"
                 #        print str(len(sent))+" active packets"
                 try:
                    link.used-=1
