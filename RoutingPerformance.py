@@ -314,7 +314,7 @@ if type == "CIRCUIT":
                 for x in range(1,len(route.path)):
                     nodeDict[route.path[x-1]][route.path[x]].used+=1
             elif updates:
-                print "BLOCKET: "+str(route.path)
+                print "BLOCKED: "+str(route.path)
 
         else:
             current = openConns.pop(0)
