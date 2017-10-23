@@ -323,7 +323,7 @@ if type == "CIRCUIT":
             successPackets += current.packets
             successRequests += 1
             totalHops += len(current.route.path)-1
-            totalDelay += current.route.pdel/1000.0 # dividing by 100 because the delay is in milliseconds
+            totalDelay += current.route.pdel
 
             # freeing up path capacity
             for x in range(1,len(current.route.path)):
@@ -402,7 +402,7 @@ else:
             # Updating statistics
             successPackets += 1
             totalHops += len(current.route.path)-1
-            totalDelay += current.route.pdel/1000.0
+            totalDelay += current.route.pdel
 
             # freeing up path capacity
             for x in range(1,len(current.route.path)):
